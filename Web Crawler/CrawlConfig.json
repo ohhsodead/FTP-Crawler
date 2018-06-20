@@ -1,0 +1,10 @@
+{
+  "ServerList": "FILE-PATH-TO-READ",
+  "PathToWrite": "PATH-TO-WRITE",
+  "OneFile": "True",
+  "OneFileName": "open-files",
+  "RewriteList": "False",
+  "RequestTimeout": 300000,
+  "SubDirectories": "True",
+  "FileTypes": "*"
+}
