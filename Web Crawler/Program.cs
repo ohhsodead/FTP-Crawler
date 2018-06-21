@@ -77,7 +77,7 @@ namespace Web_Crawler
             }
         }
 
-        static List<WebFile> existingFiles = new List<WebFile>();
+        static List<string> existingFileURLs = new List<string>();
 
         public static void StartCrawler()
         {
@@ -158,13 +158,13 @@ namespace Web_Crawler
                     {
                         try
                         {
-                            existingFiles.Add(JsonConvert.DeserializeObject<WebFile>(s));
+                            existingFileURLs.Add(JsonConvert.DeserializeObject<WebFile>(s).URL);
                         }
                         catch { }
                     }
                 }
 
-                OutputMessage("Found existing files - (" + existingFiles.Count() + ")");
+                OutputMessage("Found existing files - (" + existingFileURLs.Count() + ")");
             }
 
             // Creates directory to output results lists to (If we're writing to multiple lists)
@@ -185,6 +185,8 @@ namespace Web_Crawler
             stopWatch.Start();
 
             int filesFound = 0;
+            int filesAdded = 0;
+            long filesSize = 0;
 
             /* Gets web files from web servers and writes links to them in specified path */
             foreach (var webServer in webServers)
@@ -197,24 +199,28 @@ namespace Web_Crawler
                     if (usersConfig.OneFile) // Writes results to one file
                     {
                         foreach (var webFile in GetWebFiles(webServer, usersConfig.SubDirectories, usersConfig.RequestTimeout, filesTypes))
-                            if (!existingFiles.Contains(webFile))
+                            if (!existingFileURLs.Contains(webFile.URL))
                                 using (StreamWriter sw = File.AppendText(oneFilePathToWrite))
                                 {
                                     sw.WriteLine(JsonConvert.SerializeObject(webFile));
+                                    filesSize = filesSize + webFile.Size;
                                     OutputMessage("Found File : " + webFile.Name + " [" + webFile.URL + "]");
-                                    filesFound++;
+                                    filesAdded++;
                                 }
+                        filesFound++;
                     }
                     else // Writes results to multiple file paths (One directory for each host)
                     {
                         foreach (var webFile in GetWebFiles(webServer, usersConfig.SubDirectories, usersConfig.RequestTimeout, filesTypes))
-                            if (!existingFiles.Contains(webFile))
+                            if (!existingFileURLs.Contains(webFile.URL))
                                 using (StreamWriter sw = File.AppendText($@"{pathWriteListsTo}\{webFile.Host}.json"))
                                 {
                                     sw.WriteLine(JsonConvert.SerializeObject(webFile));
                                     OutputMessage("Found File : " + webFile.Name + " [" + webFile.URL + "]");
-                                    filesFound++;
+                                    filesSize = filesSize + webFile.Size;
+                                    filesAdded++;
                                 }
+                        filesFound++;
                     }
                 }
                 catch (Exception ex) { LogMessage(ex.Message); }
@@ -223,7 +229,7 @@ namespace Web_Crawler
             stopWatch.Stop();
 
             OutputMessage("Web Crawl Completed. So, what now?");
-            OutputResult(webServers.Count(), new TimeSpan(stopWatch.ElapsedTicks), filesFound);
+            OutputResult(webServers.Count(), filesAdded, filesSize, new TimeSpan(stopWatch.ElapsedTicks), filesFound);
             OutputPause();
 
             RootMenu = true;
@@ -387,17 +393,21 @@ namespace Web_Crawler
             Output.WriteLine(ConsoleColor.Cyan, message);
         }
 
-        public static void OutputResult(int webServersCrawled, TimeSpan timeTaken, int filesFound)
+        public static void OutputResult(int webServersCrawled, int filesAdded, long filesSize, TimeSpan timeTaken, int filesFound)
         {
             OutputTitle();
             Output.WriteLine(ConsoleColor.Red, string.Format(@"------------- Results --------------
 
 Web Servers Crawled: {0}
-Time Taken (mins): {1}
+Files Added: {1}
+Files Size: {2}
+Time Taken (mins): {3}
 --------------------
-Total Files Found: {2}
+Total Files Found: {4}
 
--------------------------------------- - ", webServersCrawled, timeTaken.TotalMinutes, filesFound));
+---------------------------------------", webServersCrawled, filesAdded, StringExtensions.BytesToPrefix(filesSize), timeTaken.TotalMinutes, filesFound));
+
+            OutputPause();
         }
 
         public static void OutputPause()
