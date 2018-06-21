@@ -184,10 +184,6 @@ namespace Web_Crawler
             var stopWatch = new Stopwatch();
             stopWatch.Start();
 
-            int filesFound = 0;
-            int filesAdded = 0;
-            long filesSize = 0;
-
             /* Gets web files from web servers and writes links to them in specified path */
             foreach (var webServer in webServers)
             {
@@ -196,32 +192,7 @@ namespace Web_Crawler
                     OutputTitle();
                     OutputMessage("Crawling " + webServer);
 
-                    if (usersConfig.OneFile) // Writes results to one file
-                    {
-                        foreach (var webFile in GetWebFiles(webServer, usersConfig.SubDirectories, usersConfig.RequestTimeout, filesTypes))
-                            if (!existingFileURLs.Contains(webFile.URL))
-                                using (StreamWriter sw = File.AppendText(oneFilePathToWrite))
-                                {
-                                    sw.WriteLine(JsonConvert.SerializeObject(webFile));
-                                    filesSize = filesSize + webFile.Size;
-                                    OutputMessage("Found File : " + webFile.Name + " [" + webFile.URL + "]");
-                                    filesAdded++;
-                                }
-                        filesFound++;
-                    }
-                    else // Writes results to multiple file paths (One directory for each host)
-                    {
-                        foreach (var webFile in GetWebFiles(webServer, usersConfig.SubDirectories, usersConfig.RequestTimeout, filesTypes))
-                            if (!existingFileURLs.Contains(webFile.URL))
-                                using (StreamWriter sw = File.AppendText($@"{pathWriteListsTo}\{webFile.Host}.json"))
-                                {
-                                    sw.WriteLine(JsonConvert.SerializeObject(webFile));
-                                    OutputMessage("Found File : " + webFile.Name + " [" + webFile.URL + "]");
-                                    filesSize = filesSize + webFile.Size;
-                                    filesAdded++;
-                                }
-                        filesFound++;
-                    }
+                    WriteWebFiles(webServer, usersConfig, oneFilePathToWrite, pathWriteListsTo, filesTypes);
                 }
                 catch (Exception ex) { LogMessage(ex.Message); }
             }
@@ -235,6 +206,11 @@ namespace Web_Crawler
             RootMenu = true;
         }
 
+        // Results
+        static int filesFound = 0;
+        static int filesAdded = 0;
+        static long filesSize = 0;
+
         public static ConfigFile UsersConfig()
         {
             if (!File.Exists(configFilePath))
@@ -247,16 +223,16 @@ namespace Web_Crawler
             return config;
         }
 
-        static List<WebFile> foundFiles = new List<WebFile>();
-
-        public static List<WebFile> GetWebFiles(string webServer, bool crawlSubDirectories, int requestTimeout, List<string> fileTypes)
+        public static void WriteWebFiles(string webServer, ConfigFile configFile, string oneFilePathToWrite, string pathWriteListsTo, List<string> fileTypes)
         {
+            var usersConfig = configFile;
+
             var oldItemSplit = webServer.Split('/');
             Array.Resize(ref oldItemSplit, oldItemSplit.Length - 2);
             var previousItem = String.Join("/", oldItemSplit);
 
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(webServer);
-            request.Timeout = requestTimeout;
+            request.Timeout = usersConfig.RequestTimeout;
             using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
             {
                 using (StreamReader reader = new StreamReader(response.GetResponseStream(), Encoding.Default))
@@ -293,13 +269,40 @@ namespace Web_Crawler
                                                 DateUploaded = Utilities.FileLastModified(listItemURL)
                                             };
 
-                                            foundFiles.Add(foundFile);
+                                            if (usersConfig.OneFile) // Writes results to one file
+                                            {
+                                                if (!existingFileURLs.Contains(foundFile.URL))
+                                                    using (StreamWriter sw = File.AppendText(oneFilePathToWrite))
+                                                    {
+                                                        existingFileURLs.Add(foundFile.URL);
+                                                        sw.WriteLine(JsonConvert.SerializeObject(foundFile));
+                                                        filesSize = filesSize + foundFile.Size;
+                                                        OutputMessage("Found File : " + foundFile.Name + " [" + foundFile.URL + "]");
+                                                        filesAdded++;
+                                                    }
+
+                                                filesFound++;
+                                            }
+                                            else // Writes results to multiple file paths (One directory for each host)
+                                            {
+                                                if (!existingFileURLs.Contains(foundFile.URL))
+                                                    using (StreamWriter sw = File.AppendText($@"{pathWriteListsTo}\{foundFile.Host}.json"))
+                                                    {
+                                                        existingFileURLs.Add(foundFile.URL);
+                                                        sw.WriteLine(JsonConvert.SerializeObject(foundFile));
+                                                        OutputMessage("Found File : " + foundFile.Name + " [" + foundFile.URL + "]");
+                                                        filesSize = filesSize + foundFile.Size;
+                                                        filesAdded++;
+                                                    }
+
+                                                filesFound++;
+                                            }
                                         }
                                     }
                                 }
                                 else // Checks if this item is a sub directory/folder
                                 {
-                                    if (crawlSubDirectories)
+                                    if (usersConfig.SubDirectories)
                                     {
                                         try
                                         {
@@ -311,14 +314,14 @@ namespace Web_Crawler
                                                     if (!ignoredItems.Any(listItem.ToLower().Contains))
                                                         if (Utilities.URLExists(listItemURL))
                                                             if (!fileTypes.Any(x => listItem.ToUpper().EndsWith(x)))
-                                                                GetWebFiles(listItemURL.TrimEnd('/').Replace(" ", "%20").Replace("#", "%23") + " / ", crawlSubDirectories, requestTimeout, fileTypes);
+                                                                WriteWebFiles(listItemURL.TrimEnd('/').Replace(" ", "%20").Replace("#", "%23") + " / ", usersConfig, oneFilePathToWrite, pathWriteListsTo, fileTypes);
+                                                    // foundFiles.AddRange(GetWebFiles(listItemURL.TrimEnd('/').Replace(" ", "%20").Replace("#", "%23") + " / ", crawlSubDirectories, requestTimeout, fileTypes));
                                                 }
                                             }
                                         }
                                         catch (Exception ex)
                                         {
                                             Console.WriteLine(ex.Message);
-                                            break;
                                         }
                                     }
                                 }
@@ -330,8 +333,6 @@ namespace Web_Crawler
                     }
                 }
             }
-
-            return foundFiles;
         }
 
         static void WriteTopSearches()
