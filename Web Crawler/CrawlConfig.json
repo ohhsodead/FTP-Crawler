@@ -2,7 +2,7 @@
   "ServerList": "FILE-PATH-TO-READ",
   "PathToWrite": "PATH-TO-WRITE",
   "OneFile": "True",
-  "OneFileName": "open-files",
+  "OneFileName": "FILE-NAME",
   "RewriteList": "False",
   "RequestTimeout": 300000,
   "SubDirectories": "True",

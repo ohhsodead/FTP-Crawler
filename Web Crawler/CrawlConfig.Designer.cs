@@ -65,7 +65,7 @@ namespace Web_Crawler {
         ///  &quot;ServerList&quot;: &quot;FILE-PATH-TO-READ&quot;,
         ///  &quot;PathToWrite&quot;: &quot;PATH-TO-WRITE&quot;,
         ///  &quot;OneFile&quot;: &quot;True&quot;,
-        ///  &quot;OneFileName&quot;: &quot;open-files&quot;,
+        ///  &quot;OneFileName&quot;: &quot;FILE-NAME&quot;,
         ///  &quot;RewriteList&quot;: &quot;False&quot;,
         ///  &quot;RequestTimeout&quot;: 300000,
         ///  &quot;SubDirectories&quot;: &quot;True&quot;,
