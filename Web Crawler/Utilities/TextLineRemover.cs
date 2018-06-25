@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace Web_Crawler
+namespace Web_Crawler.Utilities
 {
     public static class TextLineRemover
     {

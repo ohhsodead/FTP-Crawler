@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Web_Crawler {
+namespace Web_Crawler.Resources {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace Web_Crawler {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Web_Crawler.CrawlConfig", typeof(CrawlConfig).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Web_Crawler.Resources.CrawlConfig", typeof(CrawlConfig).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;

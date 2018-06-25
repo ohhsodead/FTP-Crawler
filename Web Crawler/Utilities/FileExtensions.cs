@@ -3,27 +3,42 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 
-namespace Web_Crawler
+namespace Web_Crawler.Utilities
 {
-    class Utilities
+    class FileExtensions
     {
         /// <summary>
-        /// Gets web file last modified date
+        /// Gets total size of ftp file
         /// </summary>
-        /// <param name="FileURL"></param>
+        /// <param name="fileURL">FTP File</param>
         /// <returns></returns>
-        public static DateTime FileLastModified(string FileURL)
+        public static long FtpFileSize(string fileURL)
         {
             try
             {
-                var req = WebRequest.Create(FileURL);
-                req.Method = "HEAD";
-                req.Timeout = 300000;
-                using (var fileResponse = (HttpWebResponse)req.GetResponse())
-                    if (fileResponse.LastModified != null)
-                        return fileResponse.LastModified;
-                    else
-                        return DateTime.MinValue;
+                var request = (FtpWebRequest)WebRequest.Create(fileURL);
+                request.Credentials = new NetworkCredential("anonymous", "password");
+                request.Method = WebRequestMethods.Ftp.GetFileSize;
+                using (WebResponse response = request.GetResponse())
+                    return response.ContentLength;
+            }
+            catch { return 0; }
+        }
+
+        /// <summary>
+        /// Gets file DateTimestamp of ftp file
+        /// </summary>
+        /// <param name="fileURL">FTP File</param>
+        /// <returns></returns>
+        public static DateTime FtpFileTimestamp(string fileURL)
+        {
+            try
+            {
+                FtpWebRequest request = (FtpWebRequest)WebRequest.Create(fileURL);
+                request.Credentials = new NetworkCredential("anonymous", "password");
+                request.Method = WebRequestMethods.Ftp.GetDateTimestamp;
+                FtpWebResponse response = (FtpWebResponse)request.GetResponse();
+                return response.LastModified;
             }
             catch { return DateTime.MinValue; }
         }
@@ -33,7 +48,7 @@ namespace Web_Crawler
         /// </summary>
         /// <param name="FileURL"></param>
         /// <returns></returns>
-        public static int FileSize(string FileURL)
+        public static int WebFileSize(string FileURL)
         {
             try
             {
@@ -47,6 +62,27 @@ namespace Web_Crawler
                         return 0;
             }
             catch { return 0; }
+        }
+
+        /// <summary>
+        /// Gets web file last modified date
+        /// </summary>
+        /// <param name="FileURL"></param>
+        /// <returns></returns>
+        public static DateTime WebFileTimestamp(string FileURL)
+        {
+            try
+            {
+                var req = WebRequest.Create(FileURL);
+                req.Method = "HEAD";
+                req.Timeout = 300000;
+                using (var fileResponse = (HttpWebResponse)req.GetResponse())
+                    if (fileResponse.LastModified != null)
+                        return fileResponse.LastModified;
+                    else
+                        return DateTime.MinValue;
+            }
+            catch { return DateTime.MinValue; }
         }
 
         /// <summary>

@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
-namespace Web_Crawler
+namespace Web_Crawler.Utilities
 {
     class FileTypes
     {
@@ -16,7 +12,6 @@ namespace Web_Crawler
         public static List<string> Software { get; } = new List<string>() { "EXE", "VOB", "ZIP", "TAR", "RAR", "7Z", "ISO", "PKG", "TAR.GZ", "APK", "IPA", "APPX", "XAP", "JAR" };
         public static List<string> Torrent { get; } = new List<string>() { "TORRENT" };
         public static List<string> Subtitle { get; } = new List<string>() { "SRT", "SUB", "VTT" };
-        public static List<string> Other { get; } = new List<string>() { "MQ4", "NDS", "JSP", "GG", "SWF", "PS", "RTF", "BAS", "CC", "C", "CPP", "CXX", "H", "HPP", "CS", "JAVA", "PY", "PL", "PHP", "HTML", "ASPX", "XML", "TXT", "SQL", "CSV", "PSD", "GZ", "BIN", "PAR", "PAR2", "PYK", "PK3", "PK4", "SKB", "IMG", "HGZ", "AI", "OTF", "TTF", "CSS", "PLS", "Z64" };
-
+        public static List<string> Other { get; } = new List<string>() { "NFO", "MQ4", "NDS", "JSP", "GG", "SWF", "PS", "RTF", "BAS", "CC", "C", "CPP", "CXX", "H", "HPP", "CS", "JAVA", "PY", "PL", "PHP", "DB", "HTM", "HTML", "ASPX", "XML", "TXT", "SQL", "CSV", "PSD", "GZ", "BIN", "PAR", "PAR2", "PYK", "PK3", "PK4", "SKB", "IMG", "HGZ", "AI", "OTF", "TTF", "CSS", "PLS", "Z64" };
     }
 }
