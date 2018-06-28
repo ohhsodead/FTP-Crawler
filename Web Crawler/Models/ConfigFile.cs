@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Web_Crawler
+﻿namespace Web_Crawler
 {
     public partial class ConfigFile
     {

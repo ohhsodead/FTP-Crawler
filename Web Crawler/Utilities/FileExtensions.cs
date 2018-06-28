@@ -46,7 +46,7 @@ namespace Web_Crawler.Utilities
         /// <summary>
         /// Gets web file size in bytes
         /// </summary>
-        /// <param name="FileURL"></param>
+        /// <param name="fileURL"></param>
         /// <returns></returns>
         public static int WebFileSize(string FileURL)
         {
@@ -67,7 +67,7 @@ namespace Web_Crawler.Utilities
         /// <summary>
         /// Gets web file last modified date
         /// </summary>
-        /// <param name="FileURL"></param>
+        /// <param name="fileURL"></param>
         /// <returns></returns>
         public static DateTime WebFileTimestamp(string FileURL)
         {
@@ -88,18 +88,18 @@ namespace Web_Crawler.Utilities
         /// <summary>
         /// Checks if web file exists on server
         /// </summary>
-        /// <param name="FileURL"></param>
+        /// <param name="url"></param>
         /// <returns></returns>
-        public static bool URLExists(string URL)
+        public static bool URLExists(string url)
         {
             try
             {
-                var req = WebRequest.Create(URL);
+                var req = (FtpWebRequest)WebRequest.Create(url);
                 req.Timeout = 300000;
 
                 try
                 {
-                    using (var fileResponse = (HttpWebResponse)req.GetResponse())
+                    using (var fileResponse = (FtpWebResponse)req.GetResponse())
                         return true;
                 }
                 catch
@@ -126,7 +126,7 @@ namespace Web_Crawler.Utilities
         }
 
         /// <summary>
-        /// Checks if path is a local file
+        /// Checks if path is a local file and exists on machine
         /// </summary>
         /// <param name="filePath"></param>
         /// <returns></returns>
@@ -136,15 +136,15 @@ namespace Web_Crawler.Utilities
         }
 
         /// <summary>
-        /// Checks if path is a web file
+        /// Checks if path is valid
         /// </summary>
-        /// <param name="filePath"></param>
+        /// <param name="url"></param>
         /// <returns></returns>
-        public static bool IsWebFile(string filePath)
+        public static bool IsWebFile(string url)
         {
             try
             {
-                Uri uri = new Uri(filePath);
+                Uri uri = new Uri(url);
                 return true;
             }
             catch (Exception)

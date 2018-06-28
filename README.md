@@ -1,8 +1,8 @@
 # Web Crawler
 
-Basic web crawler written for my database
+Basic concept of a web crawler, solely written for experimental purposes
 
-### Usage
+## Usage
 
 It's just as simple as a configuration file, edit the values to your desire and you're all set. Hopefully expanding the features will come soon, but at the moment I'm working on alternative methods to get the listing.
 
@@ -27,24 +27,29 @@ I'll somewhat explain what these do...
 * `PathToWrite` is the directory it'll use to output the results. (string)
 * `OneFile` indicates whether it will output all results to one file, or seperate lists for each web server. (True/False)
 * `OneFileName` sets the file name to be used for output. (string)
-* `RewriteList` indicates whether to re-write the `OneFile` output (delete the old one), or to get existing files in file and not add them if found.
-* `RequestTimeout` sets the timeout for the request to the web servers.
-* `SubDirectories` indicates whether it'll crawl sub directories.
+* `RewriteList` indicates whether to re-write the `OneFile` output (delete the old one), or to get existing files in file and not add them if found. (True/False)
+* `RequestTimeout` sets the timeout (i milliseconds) for the request to the web servers. (integer)
+* `SubDirectories` indicates whether it'll crawl sub directories. (True/False)
 * `FileTypes` sets the file types to be added. `*` will allow for all/any extensions, otherwise you need to specify them by using a `|` between them, for example `MP4|MP3|PDF`	
 
 ## Output
 
-The output uses a class object for the web file. TODO
+The output writes to a list of class objects per line that contains the web file. An example of a file is shown below:
+
+```json
+{
+  "Type": "MP4",
+  "Name": "File name (no extension)",
+  "Size": "Total size in bytes",
+  "DateUploaded": "DateTime uploaded, example: 2015-04-23T20:44:41+01:00",
+  "Host": "Server where file's located",
+  "URL": "The direct URL/URI to the file"
+}
+```
 
 ## Contributing
 
 All contributions are welcome just send a pull request. It is recommended to use Visual Studio 2017 when making code changes in this project. You can download the community version for free [here](https://www.visualstudio.com/downloads/).
-
-## Authors
-
-* **Ashley** - *Initial work* - [HerbL27](https://github.com/HerbL27)
-
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
 
 ## License
 
@@ -53,3 +58,4 @@ This project is licensed under the GNU General Public License v3.0 License - see
 ## Acknowledgments
 
 * EasyConsole
+* Newtonsoft.Json
