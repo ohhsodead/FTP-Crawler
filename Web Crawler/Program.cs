@@ -19,22 +19,22 @@ namespace Web_Crawler
         /// <summary>
         /// This applications path
         /// </summary>
-        public static string pathCrawler = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
+        public static string PathCrawler = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
 
         /// <summary>
         /// Log File Path
         /// </summary>
-        public static string filePathLog = $@"{pathCrawler}\Log.txt";
+        public static string FilePathLog = $@"{PathCrawler}\Log.txt";
 
         /// <summary>
         /// Default Configuration File Path
         /// </summary>
-        public static string filePathConfig = $@"{pathCrawler}\config.json";
+        public static string FilePathConfig = $@"{PathCrawler}\config.json";
 
         /// <summary>
         /// URL to get top searches from
         /// </summary>
-        public static string linkFileChefSearches = "http://www.filechef.com/searches/index"; // + (number)
+        public static string UrlFileChefSearches = "http://www.filechef.com/searches/index";
 
         /// <summary>
         /// Sets root menu to display
@@ -70,8 +70,6 @@ namespace Web_Crawler
             FileTypes.All.AddRange(FileTypes.Software);
             FileTypes.All.AddRange(FileTypes.Other);
 
-            if (!File.Exists(filePathLog)) File.WriteAllText(filePathLog, ""); // Creates log file
-
             while (RootMenu)
             {
                 OutputTitle();
@@ -97,17 +95,17 @@ namespace Web_Crawler
             var ftpServers = new List<string>();
 
             /* Loads the list of web servers from either the local file or a web file containing the list of servers */
-            OutputMessage($"Reading servers from [{usersConfig.ServerList}]...");
+            OutputMessage($"Reading servers from [{usersConfig.ServersFilename}]...");
 
-            if (FileExtensions.IsLocalFile(usersConfig.ServerList)) // Checks if this file is local
-                if (File.Exists(usersConfig.ServerList))
-                    ftpServers.AddRange(File.ReadAllLines(usersConfig.ServerList));
-            else if (FileExtensions.IsWebFile(usersConfig.ServerList)) // Checks if it's a web file
-                if (!FileExtensions.URLExists(usersConfig.ServerList))
-                    ftpServers.AddRange(FileExtensions.LoadWebTextFileItems(usersConfig.ServerList, pathCrawler));
+            if (FileExtensions.IsLocalFile(usersConfig.ServersFilename)) // Checks if this file is local
+                if (File.Exists(usersConfig.ServersFilename))
+                    ftpServers.AddRange(File.ReadAllLines(usersConfig.ServersFilename));
+            else if (FileExtensions.IsWebFile(usersConfig.ServersFilename)) // Checks if it's a web file
+                if (!FileExtensions.URLExists(usersConfig.ServersFilename))
+                    ftpServers.AddRange(FileExtensions.LoadWebTextFileItems(usersConfig.ServersFilename, PathCrawler));
             else
             {
-                OutputMessage($"Servers list cannot be identified. Make sure this file exists either on your machine or a web server and that the 'ServerList' property is directed to the correct location.", ConsoleColor.Red);
+                OutputMessage($"Servers list cannot be identified. Make sure this file exists either on your machine or a web server and that 'ServersFilename' is set to the correct location.", ConsoleColor.Red);
                 OutputPause();
                 RootMenu = true;
                 return;
@@ -115,21 +113,23 @@ namespace Web_Crawler
 
             OutputMessage($"Servers loaded successfully.", ConsoleColor.Green);
 
-            var oneFilePathToWrite = $@"{usersConfig.PathToWrite}/{usersConfig.OneFileName}.json".Replace("/", @"\"); // Directory to output results lists to (If we're writing to one file)
+            var outputFileName = $@"{usersConfig.OutputFilename}.json".Replace("/", @"\"); // Directory to output results lists to (If we're writing to one file)
 
-            if (usersConfig.RewriteList) // Deletes old list if we're re-writing, otherwise we load the existing files to not add duplicates
+            if (usersConfig.Overwrite) // Deletes old output if we're overwriting, otherwise we load the existing files to not add duplicates
             {
-                if (!File.Exists(oneFilePathToWrite))
-                    File.Delete(oneFilePathToWrite);
+                if (!File.Exists(outputFileName))
+                    File.Delete(outputFileName);
 
                 OutputMessage("Deleted old results file...");
             }
             else
             {
-                if (!File.Exists(oneFilePathToWrite))
-                    File.WriteAllText(oneFilePathToWrite, "");
+                OutputMessage($"Getting existing files...", ConsoleColor.Green);
 
-                using (FileStream fs = File.Open(oneFilePathToWrite, FileMode.Open))
+                if (!File.Exists(outputFileName))
+                    File.WriteAllText(outputFileName, "");
+
+                using (FileStream fs = File.Open(outputFileName, FileMode.Open))
                 using (BufferedStream bs = new BufferedStream(fs))
                 using (StreamReader sr = new StreamReader(bs))
                 {
@@ -143,16 +143,9 @@ namespace Web_Crawler
                         catch { }
                     }
                 }
-
-                OutputMessage("Found existing files - (" + existingFileURLs.Count() + ")");
             }
 
-            var pathWriteListsTo = $@"{usersConfig.PathToWrite}\{DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss")}\"; // Folder to be used for this instance of crawling
-
-            if (!usersConfig.OneFile)
-                Directory.CreateDirectory(pathWriteListsTo);
-
-            /* File types to include in results, exluding those not specified */
+            // File types to include in results, exluding those not specified
             var filesTypes = FileTypes.All;
 
             if (usersConfig.FileTypes == "*")
@@ -162,38 +155,45 @@ namespace Web_Crawler
             
             timeCrawl.Start(); // Start the timer 
 
-            /* Loops FTP servers while crawling files and writing them to file(s) */
+            // Loops FTP servers while crawling files and writing them to file(s)
             foreach (var ftpServer in ftpServers)
             {
                 try
                 {
                     OutputTitle();
                     OutputMessage("Crawling " + ftpServer);
-
-                    WriteFTPFiles(ftpServer, usersConfig, oneFilePathToWrite, pathWriteListsTo, filesTypes);
+                    WriteFTPFiles(ftpServer, usersConfig, outputFileName, filesTypes);
                 }
-                catch (Exception ex) { LogMessage(ex.Message); }
+                catch (Exception ex) { BrokenServers.Add(ftpServer); LogMessage(ex.Message); }
             }
 
             timeCrawl.Stop();
 
-            OutputResult(ftpServers.Count(), filesAdded, filesSize, new TimeSpan(timeCrawl.ElapsedTicks), filesFound);
+            OutputResult(ftpServers.Count(), new TimeSpan(timeCrawl.ElapsedTicks));
+
+            // Removes broken servers from the server list
+            File.Delete(usersConfig.ServersFilename);
+            using (StreamWriter sw = File.AppendText(usersConfig.ServersFilename))
+                foreach (var ftpServer in ftpServers)
+                    if (!BrokenServers.Contains(ftpServer))
+                        sw.WriteLine(ftpServer);
 
             RootMenu = true;
         }
 
+        static List<string> BrokenServers = new List<string>();
         static Stopwatch timeCrawl = new Stopwatch();
 
-        public static void WriteFTPFiles(string ftpServer, ConfigFile usersConfig, string oneFilePathToWrite, string pathWriteListsTo, List<string> fileTypes)
+        static string[] invalidItems = new string[] { ".", "..", "...", "cAos" }; // Ignored items, causes an infinite loop as they're usually default items (parent directory) or items that cause it to break
+
+        public static void WriteFTPFiles(string ftpServer, ConfigFile usersConfig, string outputFileName, List<string> fileTypes)
         {
             try
             {
-                string[] invalidItems = new string[] { ".", "..", "...", "cAos" }; // Ignored items, causes an infinite loop as they're usually default items (parent directory) or just items that cause it to break
 
                 FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpServer);
                 request.Timeout = usersConfig.RequestTimeout;
                 request.Method = WebRequestMethods.Ftp.ListDirectory;
-
                 request.Credentials = new NetworkCredential("anonymous", "password"); // ADD SUPPORT FOR MANUAL USERNAME AND PASSWORD VIA FTP LIST (USE A FORMAT)
 
                 using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
@@ -207,13 +207,6 @@ namespace Web_Crawler
                         string itemURL = $"{ftpServer}{item}";
                         Uri itemUri = new Uri(itemURL);
 
-                        string writeToPath = "";
-
-                        if (usersConfig.OneFile)
-                            writeToPath = oneFilePathToWrite;
-                        else
-                            writeToPath = $@"{pathWriteListsTo}\{itemUri.Host}.json";
-
                         if (fileTypes.Any(x => item.ToUpper().EndsWith("." + x))) // Assume this is a file, as it ends with ".(SUPPORTED-EXTENSION)" e.g. ".MP4" OR ".MP3"
                         {
                             if (!existingFileURLs.Contains(itemUri.AbsoluteUri.Replace("#", "%23")))
@@ -222,13 +215,13 @@ namespace Web_Crawler
                                 {
                                     Name = Path.GetFileNameWithoutExtension(new Uri(itemURL).LocalPath),
                                     URL = itemUri.AbsoluteUri.Replace("#", "%23"),
-                                    Host = itemUri.Host.Replace("www.", ""),
+                                    Host = itemUri.Host,
                                     Type = Path.GetExtension(itemURL).Replace(".", "").ToUpper(),
                                     Size = FileExtensions.FtpFileSize(itemURL),
                                     DateUploaded = FileExtensions.FtpFileTimestamp(itemURL)
                                 };
 
-                                using (StreamWriter sw = File.AppendText(writeToPath))
+                                using (StreamWriter sw = File.AppendText(outputFileName))
                                 {
                                     sw.WriteLine(JsonConvert.SerializeObject(newFile));
                                     existingFileURLs.Add(newFile.URL);
@@ -243,7 +236,7 @@ namespace Web_Crawler
                             if (!invalidItems.Contains(item))
                                 if (!item.StartsWith("#"))
                                     if (!item.EndsWith("#"))
-                                        WriteFTPFiles($"{itemURL}/", usersConfig, oneFilePathToWrite, pathWriteListsTo, fileTypes);
+                                        WriteFTPFiles($"{itemURL}/", usersConfig, outputFileName, fileTypes);
                         }
                     }
                 }
@@ -258,7 +251,6 @@ namespace Web_Crawler
             }
         }
 
-
         /* Write Files from Web Servers using HTML parsing */
 
         static List<string> existingFileURLs = new List<string>();
@@ -269,42 +261,44 @@ namespace Web_Crawler
 
             OutputTitle();
 
+            if (!File.Exists(FilePathLog)) File.WriteAllText(FilePathLog, ""); // Creates blank log file
+
             // Load users configuration json file
             OutputMessage($"Loading your configuration file...");
             ConfigFile usersConfig = UsersConfig();
 
-            // Checks if config PathToWrite exists on machine
-            if (!Directory.Exists(usersConfig.PathToWrite))
-                Directory.CreateDirectory(usersConfig.PathToWrite);
+            // Checks if config OutputFilename exists on machine
+            if (!Directory.Exists(usersConfig.OutputFilename))
+                Directory.CreateDirectory(usersConfig.OutputFilename);
 
             List<string> webServers = new List<string>(); // Servers to loop
 
             /* Loads the list of web servers from either the local file or a web file containing the items */
-            OutputMessage($"Loading web servers from [{usersConfig.ServerList}]...");
+            OutputMessage($"Loading web servers from [{usersConfig.ServersFilename}]...");
 
-            if (FileExtensions.IsLocalFile(usersConfig.ServerList)) // Checks if file is local
+            if (FileExtensions.IsLocalFile(usersConfig.ServersFilename)) // Checks if file is local
             {
-                if (!File.Exists(usersConfig.ServerList))
+                if (!File.Exists(usersConfig.ServersFilename))
                 {
-                    OutputMessage($"Web servers list doesn't exist on your machine. Create a text file with your list of servers and replace [{usersConfig.ServerList}] with this file path.");
+                    OutputMessage($"Web servers list doesn't exist on your machine. Create a text file with your list of servers and replace [{usersConfig.ServersFilename}] with this file path.");
                     OutputPause();
                     RootMenu = true;
                     return;
                 }
                 else
-                    webServers.AddRange(File.ReadAllLines(usersConfig.ServerList));
+                    webServers.AddRange(File.ReadAllLines(usersConfig.ServersFilename));
             }
-            else if (FileExtensions.IsWebFile(usersConfig.ServerList)) // Checks if is web file
+            else if (FileExtensions.IsWebFile(usersConfig.ServersFilename)) // Checks if is web file
             {
-                if (!FileExtensions.URLExists(usersConfig.ServerList))
+                if (!FileExtensions.URLExists(usersConfig.ServersFilename))
                 {
-                    OutputMessage($"Web servers list doesn't exist on your machine. Create a text file with your list of servers and replace [{usersConfig.ServerList}] with this file path.");
+                    OutputMessage($"Web servers list doesn't exist on your machine. Create a text file with your list of servers and replace [{usersConfig.ServersFilename}] with this file path.");
                     OutputPause();
                     RootMenu = true;
                     return;
                 }
                 else
-                    webServers.AddRange(FileExtensions.LoadWebTextFileItems(usersConfig.ServerList, pathCrawler));
+                    webServers.AddRange(FileExtensions.LoadWebTextFileItems(usersConfig.ServersFilename, PathCrawler));
             }
             else
             {
@@ -317,19 +311,19 @@ namespace Web_Crawler
             OutputMessage($"Web servers loaded successfully.");
 
             // Directory to output results lists to (If we're writing to one file)
-            var oneFilePathToWrite = $@"{usersConfig.PathToWrite}/{usersConfig.OneFileName}.json".Replace("/", @"\");
+            var outputFileName = $@"{usersConfig.OutputFilename}.json".Replace("/", @"\");
 
             // Deletes old list if we're re-writing, otherwise we load the existing files to not add duplicates
-            if (usersConfig.RewriteList)
+            if (usersConfig.Overwrite)
             {
-                if (!File.Exists(oneFilePathToWrite))
-                    File.Delete(oneFilePathToWrite);
+                if (!File.Exists(outputFileName))
+                    File.Delete(outputFileName);
 
                 OutputMessage("Deleted old results file...");
             }
             else
             {
-                using (FileStream fs = File.Open(oneFilePathToWrite, FileMode.Open))
+                using (FileStream fs = File.Open(outputFileName, FileMode.Open))
                 using (BufferedStream bs = new BufferedStream(fs))
                 using (StreamReader sr = new StreamReader(bs))
                 {
@@ -346,13 +340,7 @@ namespace Web_Crawler
 
                 OutputMessage("Found existing files - (" + existingFileURLs.Count() + ")");
             }
-
-            // Creates directory to output results lists to (If we're writing to multiple lists)
-            var pathWriteListsTo = $@"{usersConfig.PathToWrite}\{DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss")}\"; // Folder to be used for this instance of crawling
-
-            if (!usersConfig.OneFile)
-                Directory.CreateDirectory(pathWriteListsTo);
-
+            
             // Sets the file types to be used
             var filesTypes = FileTypes.All;
 
@@ -372,7 +360,7 @@ namespace Web_Crawler
                     OutputTitle();
                     OutputMessage("Crawling " + webServer);
 
-                    WriteWebFiles(webServer, usersConfig, oneFilePathToWrite, pathWriteListsTo, filesTypes);
+                    WriteWebFiles(webServer, usersConfig, outputFileName, filesTypes);
                 }
                 catch (Exception ex) { LogMessage(ex.Message); }
             }
@@ -380,7 +368,7 @@ namespace Web_Crawler
             stopWatch.Stop();
 
             OutputMessage("Web Crawl Completed. So, what now?");
-            OutputResult(webServers.Count(), filesAdded, filesSize, new TimeSpan(stopWatch.ElapsedTicks), filesFound);
+            OutputResult(webServers.Count(), new TimeSpan(stopWatch.ElapsedTicks));
 
             RootMenu = true;
         }
@@ -393,18 +381,18 @@ namespace Web_Crawler
         public static ConfigFile UsersConfig()
         {
 
-           if (!File.Exists(filePathConfig)) // Creates a config file for the user if it doesn't exist
+           if (!File.Exists(FilePathConfig)) // Creates a config file for the user if it doesn't exist
             {
-                OutputMessage($"Configuration file doesn't exist. Go to [{pathCrawler}] to configure your crawler.");
-                File.WriteAllText(filePathConfig, CrawlConfig.DefaultCrawlConfig);
+                OutputMessage($"Configuration file doesn't exist. Go to [{PathCrawler}] to configure your crawler.");
+                File.WriteAllText(FilePathConfig, CrawlConfig.DefaultCrawlConfig);
                 OutputPause();
             }
 
-            var config = JsonConvert.DeserializeObject<ConfigFile>(File.ReadAllText(filePathConfig).Replace(@"\", "/"));
+            var config = JsonConvert.DeserializeObject<ConfigFile>(File.ReadAllText(FilePathConfig).Replace(@"\", "/"));
             return config;
         }
 
-        public static void WriteWebFiles(string webServer, ConfigFile configFile, string oneFilePathToWrite, string pathWriteListsTo, List<string> fileTypes)
+        public static void WriteWebFiles(string webServer, ConfigFile configFile, string outputFileName, List<string> fileTypes)
         {
             var usersConfig = configFile;
 
@@ -450,60 +438,39 @@ namespace Web_Crawler
                                                 DateUploaded = FileExtensions.WebFileTimestamp(listItemURL)
                                             };
 
-                                            if (usersConfig.OneFile) // Writes results to one file
-                                            {
-                                                if (!existingFileURLs.Contains(foundFile.URL))
-                                                    using (StreamWriter sw = File.AppendText(oneFilePathToWrite))
-                                                    {
-                                                        existingFileURLs.Add(foundFile.URL);
-                                                        sw.WriteLine(JsonConvert.SerializeObject(foundFile));
-                                                        filesSize = filesSize + foundFile.Size;
-                                                        OutputMessage("Found File : " + foundFile.Name + " [" + foundFile.URL + "]");
-                                                        filesAdded++;
-                                                    }
+                                            if (!existingFileURLs.Contains(foundFile.URL))
+                                                using (StreamWriter sw = File.AppendText(outputFileName))
+                                                {
+                                                    existingFileURLs.Add(foundFile.URL);
+                                                    sw.WriteLine(JsonConvert.SerializeObject(foundFile));
+                                                    filesSize = filesSize + foundFile.Size;
+                                                    OutputMessage("Found File : " + foundFile.Name + " [" + foundFile.URL + "]");
+                                                    filesAdded++;
+                                                }
 
-                                                filesFound++;
-                                            }
-                                            else // Writes results to multiple file paths (One directory for each host)
-                                            {
-                                                if (!existingFileURLs.Contains(foundFile.URL))
-                                                    using (StreamWriter sw = File.AppendText($@"{pathWriteListsTo}\{foundFile.Host}.json"))
-                                                    {
-                                                        existingFileURLs.Add(foundFile.URL);
-                                                        sw.WriteLine(JsonConvert.SerializeObject(foundFile));
-                                                        OutputMessage("Found File : " + foundFile.Name + " [" + foundFile.URL + "]");
-                                                        filesSize = filesSize + foundFile.Size;
-                                                        filesAdded++;
-                                                    }
-
-                                                filesFound++;
-                                            }
+                                            filesFound++;
                                         }
                                     }
                                 }
                                 else // Checks if this item is a sub directory/folder
                                 {
-                                    if (usersConfig.SubDirectories)
+                                    try
                                     {
-                                        try
+                                        if (listItem.ToLower() != "")
                                         {
-                                            if (listItem.ToLower() != "")
+                                            if (listItem.ToLower() != previousItem)
                                             {
-                                                if (listItem.ToLower() != previousItem)
-                                                {
-                                                    string[] ignoredItems = { "parent directory", "...", "..", "description", "../", ".../", "/", "desc", "seriaегенд", "seria?????" };
-                                                    if (!ignoredItems.Any(listItem.ToLower().Contains))
-                                                        if (FileExtensions.URLExists(listItemURL))
-                                                            if (!fileTypes.Any(x => listItem.ToUpper().EndsWith(x)))
-                                                                WriteWebFiles(listItemURL.TrimEnd('/').Replace(" ", "%20").Replace("#", "%23") + " / ", usersConfig, oneFilePathToWrite, pathWriteListsTo, fileTypes);
-                                                    // foundFiles.AddRange(GetWebFiles(listItemURL.TrimEnd('/').Replace(" ", "%20").Replace("#", "%23") + " / ", crawlSubDirectories, requestTimeout, fileTypes));
-                                                }
+                                                string[] ignoredItems = { "parent directory", "...", "..", "description", "../", ".../", "/", "desc", "seriaегенд", "seria?????" };
+                                                if (!ignoredItems.Any(listItem.ToLower().Contains))
+                                                    if (FileExtensions.URLExists(listItemURL))
+                                                        if (!fileTypes.Any(x => listItem.ToUpper().EndsWith(x)))
+                                                            WriteWebFiles(listItemURL.TrimEnd('/').Replace(" ", "%20").Replace("#", "%23") + " / ", usersConfig, outputFileName, fileTypes);
                                             }
                                         }
-                                        catch (Exception ex)
-                                        {
-                                            Console.WriteLine(ex.Message);
-                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Console.WriteLine(ex.Message);
                                     }
                                 }
 
@@ -519,45 +486,40 @@ namespace Web_Crawler
         static void WriteTopSearches()
         {
             var items = new List<string>();
-            items.AddRange(GetTopSearches(100));
             items.AddRange(GetTopSearches(200));
+            items.AddRange(GetTopSearches(300));
 
             // Load users configuration json file
             var usersConfig = UsersConfig();
 
-            File.WriteAllText(usersConfig.PathToWrite + @"\top-searches.txt", ""); // Clear all current items
+            File.WriteAllText(usersConfig.OutputFilename + @"\searches.txt", ""); // Clear all current items
 
-            using (StreamWriter sw = File.AppendText(usersConfig.PathToWrite + @"\top-searches.txt"))
-            {
+            using (StreamWriter sw = File.AppendText(usersConfig.OutputFilename + @"\searches.txt"))
                 foreach (var item in items)
-                {
                     sw.WriteLine(item);
-                }
-            }
 
             OutputMessage("Top Searches Completed: Results (" + items.Count() + ")");
             RootMenu = true;
         }
 
-        static List<string> GetTopSearches(int number = 100) // 100 = Page 1, 200 = Page 2
+        static List<string> GetTopSearches(int number = 100) // page 1 is a different url, but others work - 200 = Page 2, 300 = Page 3
         {
             List<string> listTopSearches = new List<string>();
             using (var client = new WebClient())
-            using (var stream = client.OpenRead("https://api.hackertarget.com/pagelinks/?q=" + linkFileChefSearches + "/" + number))
+            using (var stream = client.OpenRead("https://api.hackertarget.com/pagelinks/?q=" + UrlFileChefSearches + "/" + number))
             using (var reader = new StreamReader(stream))
             {
                 stream.ReadTimeout = 60000;
                 string line;
                 while ((line = reader.ReadLine()) != null)
                 {
-                    // line = http://www.filechef.com/direct-download/[ITEM]/[TYPE] item = value, type = video/other/etc (we only return item)
-                    
+                    // line = http://www.filechef.com/direct-download/[ITEM]/[TYPE] item = name, type = video/other/etc (we only use name)
+
                     var formattedItem = line.Replace("http://www.filechef.com/direct-download/", "");
                     formattedItem = formattedItem.Substring(0, formattedItem.LastIndexOf('/')).Replace("-", " ");
-                    if (formattedItem != "" && formattedItem != linkFileChefSearches)
-                    {
+
+                    if (formattedItem != "" && formattedItem != UrlFileChefSearches)
                         listTopSearches.Add(formattedItem);
-                    }
                 }
             }
             listTopSearches.Reverse();
@@ -573,8 +535,10 @@ namespace Web_Crawler
         public static void OutputInstructions()
         {
             Output.WriteLine(ConsoleColor.Cyan, "Notes: " +
-                "\n- Configuration file (config.json) must be located in your crawler's startup directory before running." +
-                "\n- ");
+                "\n- Crawler is only a work in progress and there's ongoing active development." +
+                "\n- " +
+                "\n- Not recommended for productional purposes." +
+                "\n- Configuration file (config.json) must be located in your crawler's startup directory before running.");
         }
 
         public static void OutputMessage(string message, ConsoleColor color = ConsoleColor.Cyan)
@@ -582,19 +546,20 @@ namespace Web_Crawler
             Output.WriteLine(color, message);
         }
 
-        public static void OutputResult(int webServersCrawled, int filesAdded, long filesSize, TimeSpan timeTaken, int filesFound)
+        public static void OutputResult(int webServersCrawled, TimeSpan timeTaken)
         {
             OutputTitle();
             Output.WriteLine(ConsoleColor.Red, string.Format(@"------------- Results --------------
 
 Servers Crawled: {0}
-Files Added: {1}
-Files Size: {2}
-Time Taken (mins): {3}
+Servers Broken: {1}
+Files Added: {2}
+Files Size: {3}
+Time Taken (mins): {4}
 --------------------
-Total Files Found: {4}
+Total Files Found: {5}
 
----------------------------------------", webServersCrawled, filesAdded, Utilities.StringExtensions.BytesToPrefix(filesSize), timeTaken.TotalMinutes, filesFound));
+---------------------------------------", webServersCrawled, BrokenServers.Count, filesAdded, Utilities.StringExtensions.BytesToPrefix(filesSize), timeTaken.TotalMinutes, filesFound));
 
             OutputPause();
         }
@@ -605,7 +570,7 @@ Total Files Found: {4}
             Console.ReadKey(true);
         }
 
-        static StreamWriter log = File.AppendText(filePathLog);
+        static StreamWriter log = File.AppendText(FilePathLog);
 
         public static void LogMessage(string message)
         {

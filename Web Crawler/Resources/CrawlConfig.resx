@@ -119,14 +119,11 @@
   </resheader>
   <data name="DefaultCrawlConfig" xml:space="preserve">
     <value>{
-  "ServerList": "FILE-PATH-TO-READ",
-  "PathToWrite": "PATH-TO-WRITE",
-  "OneFile": "True",
-  "OneFileName": "FILE-NAME",
-  "RewriteList": "False",
-  "RequestTimeout": 300000,
-  "SubDirectories": "True",
-  "FileTypes": "*"
+  "ServersFilename": "C:\ftp-servers.txt",
+  "OutputFilename": "C:\ftp-file.txt"
+  "Overwrite": "False",
+  "RequestTimeout": 900000,
+  "Extensions": "*"
 }</value>
   </data>
 </root>

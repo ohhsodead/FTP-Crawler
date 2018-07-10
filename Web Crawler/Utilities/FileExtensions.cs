@@ -17,6 +17,7 @@ namespace Web_Crawler.Utilities
             try
             {
                 var request = (FtpWebRequest)WebRequest.Create(fileURL);
+                request.Timeout = 900000;
                 request.Credentials = new NetworkCredential("anonymous", "password");
                 request.Method = WebRequestMethods.Ftp.GetFileSize;
                 using (WebResponse response = request.GetResponse())
@@ -35,6 +36,7 @@ namespace Web_Crawler.Utilities
             try
             {
                 FtpWebRequest request = (FtpWebRequest)WebRequest.Create(fileURL);
+                request.Timeout = 900000;
                 request.Credentials = new NetworkCredential("anonymous", "password");
                 request.Method = WebRequestMethods.Ftp.GetDateTimestamp;
                 FtpWebResponse response = (FtpWebResponse)request.GetResponse();

@@ -1,49 +1,43 @@
 # Web Crawler
 
-Basic concept of a web crawler, solely written for experimental purposes
+Simple CLI FTP file crawler written in c-sharp
 
 ## Usage
 
-It's just as simple as a configuration file, edit the values to your desire and you're all set. Hopefully expanding the features will come soon, but at the moment I'm working on alternative methods to get the listing.
+To use, simply run/compile the application and select the option you desire. 
 
-Here is the `crawler-config.json` you'll need, place it in your Web Crawler directory (startup path) (it will create one if not found anyway):
+Here is the `config.json` you'll need to configure, place it in your crawler's startup directory (it'll be created if not existent anyway). __Not recommended for productional use.__
 
 ```json
 {
-  "ServerList": "FILE-PATH-TO-READ",
-  "PathToWrite": "PATH-TO-WRITE",
-  "OneFile": "True",
-  "OneFileName": "FILE-NAME",
-  "RewriteList": "False",
-  "RequestTimeout": 300000,
-  "SubDirectories": "True",
-  "FileTypes": "*"
+  "ServersFilename": "C:/ftp-servers.txt", // Full file path for servers
+  "OutputFilename": "C:/ftp-files", // Don't include extension
+  "Overwrite": "False", // True/False
+  "RequestTimeout": 600000, // Timeout in milliseconds 
+  "Extensions": "*" // Extensions supported, `*` defines all types
 }
 ```
 
 I'll somewhat explain what these do...
 
-* `ServerList` is the file URI of your web servers you wish the progam to crawl, on seperate lines and preferably in a text file . Note: this can be a local file or a web file too. (string)
-* `PathToWrite` is the directory it'll use to output the results. (string)
-* `OneFile` indicates whether it will output all results to one file, or seperate lists for each web server. (True/False)
-* `OneFileName` sets the file name to be used for output. (string)
-* `RewriteList` indicates whether to re-write the `OneFile` output (delete the old one), or to get existing files in file and not add them if found. (True/False)
-* `RequestTimeout` sets the timeout (i milliseconds) for the request to the web servers. (integer)
-* `SubDirectories` indicates whether it'll crawl sub directories. (True/False)
-* `FileTypes` sets the file types to be added. `*` will allow for all/any extensions, otherwise you need to specify them by using a `|` between them, for example `MP4|MP3|PDF`	
+* `ServersFilename` is the URI pointing to the list of servers you wish to crawl, preferably plain text and split by seperate lines. Note: this can be a local or web file (string)
+* `OutputFilename` is the URI pointing to the output file it'll write the results to (string)
+* `Overwrite` indicates whether it will rewrite the entire output or skip existing/duplicates (boolean)
+* `RequestTimeout` sets the timeout, in milliseconds, for the request to the web servers (integer)
+* `Extensions` are the types to be crawled. `*` allows for all/any extensions supported, otherwise specified using a `|` between them, for example `MP4|MP3|PDF`	
 
 ## Output
 
-The output writes to a list of class objects per line that contains the web file. An example of a file is shown below:
+The craler writes to the specified output path containing a class object per line that represents the file. An example of this is shown below:
 
 ```json
 {
-  "Type": "MP4",
-  "Name": "File name (no extension)",
-  "Size": "Total size in bytes",
-  "DateUploaded": "DateTime uploaded, example: 2015-04-23T20:44:41+01:00",
-  "Host": "Server where file's located",
-  "URL": "The direct URL/URI to the file"
+  "Type": "JPG", // Extension/type, preferably capitalized
+  "Name": "some_file_1", // Full name, no extension
+  "Size": "15432", // Total size in bytes
+  "DateUploaded": "2015-04-23T20:44:41+01:00", // Date/time uploaded in full format
+  "Host": "ftp.server.com", // Server that it's hosted on
+  "URL": "ftp://ftp.server.com/public/some_files_1.jpg" // Direct full URL/URI path
 }
 ```
 

@@ -1,10 +1,7 @@
 {
-  "ServerList": "FILE-PATH-TO-READ",
-  "PathToWrite": "PATH-TO-WRITE",
-  "OneFile": "True",
-  "OneFileName": "FILE-NAME",
-  "RewriteList": "False",
-  "RequestTimeout": 300000,
-  "SubDirectories": "True",
-  "FileTypes": "*"
+  "ServersFilename": "C:/ftp-servers.txt",
+  "OutputFilename": "C:/ftp-files",
+  "Overwrite": "False",
+  "RequestTimeout": 900000,
+  "Extensions": "*"
 }

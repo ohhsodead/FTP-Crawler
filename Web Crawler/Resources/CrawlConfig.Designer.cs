@@ -62,14 +62,11 @@ namespace Web_Crawler.Resources {
         
         /// <summary>
         ///   Looks up a localized string similar to {
-        ///  &quot;ServerList&quot;: &quot;FILE-PATH-TO-READ&quot;,
-        ///  &quot;PathToWrite&quot;: &quot;PATH-TO-WRITE&quot;,
-        ///  &quot;OneFile&quot;: &quot;True&quot;,
-        ///  &quot;OneFileName&quot;: &quot;FILE-NAME&quot;,
-        ///  &quot;RewriteList&quot;: &quot;False&quot;,
-        ///  &quot;RequestTimeout&quot;: 300000,
-        ///  &quot;SubDirectories&quot;: &quot;True&quot;,
-        ///  &quot;FileTypes&quot;: &quot;*&quot;
+        ///  &quot;ServersFilename&quot;: &quot;C:\ftp-servers.txt&quot;,
+        ///  &quot;OutputFilename&quot;: &quot;C:\ftp-file.txt&quot;
+        ///  &quot;Overwrite&quot;: &quot;False&quot;,
+        ///  &quot;RequestTimeout&quot;: 900000,
+        ///  &quot;Extensions&quot;: &quot;*&quot;
         ///}.
         /// </summary>
         internal static string DefaultCrawlConfig {
