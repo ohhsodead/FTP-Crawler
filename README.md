@@ -10,11 +10,11 @@ Here is the `config.json` you'll need to configure, place it in your crawler's s
 
 ```json
 {
-  "ServersFilename": "C:/ftp-servers.txt", // Full file path for servers
-  "OutputFilename": "C:/ftp-files", // Don't include extension
+  "ServersFilename": "C:/ftp-servers.txt",
+  "OutputFilename": "C:/ftp-files",
   "Overwrite": "False", // True/False
-  "RequestTimeout": 600000, // Timeout in milliseconds 
-  "Extensions": "*" // Extensions supported, `*` defines all types
+  "RequestTimeout": 600000,
+  "Extensions": "*"
 }
 ```
 
@@ -32,12 +32,12 @@ The craler writes to the specified output path containing a class object per lin
 
 ```json
 {
-  "Type": "JPG", // Extension/type, preferably capitalized
-  "Name": "some_file_1", // Full name, no extension
-  "Size": "15432", // Total size in bytes
-  "DateUploaded": "2015-04-23T20:44:41+01:00", // Date/time uploaded in full format
-  "Host": "ftp.server.com", // Server that it's hosted on
-  "URL": "ftp://ftp.server.com/public/some_files_1.jpg" // Direct full URL/URI path
+  "Type": "JPG",
+  "Name": "some_file_1",
+  "Size": "15432",
+  "DateUploaded": "2015-04-23T20:44:41+01:00",
+  "Host": "ftp.server.com",
+  "URL": "ftp://ftp.server.com/public/some_files_1.jpg"
 }
 ```
 
