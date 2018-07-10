@@ -12,7 +12,7 @@ Here is the `config.json` you'll need to configure, place it in your crawler's s
 {
   "ServersFilename": "C:/ftp-servers.txt",
   "OutputFilename": "C:/ftp-files",
-  "Overwrite": "False", // True/False
+  "Overwrite": "False",
   "RequestTimeout": 600000,
   "Extensions": "*"
 }
