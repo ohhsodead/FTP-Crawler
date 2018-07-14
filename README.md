@@ -4,7 +4,7 @@ Simple CLI FTP file crawler written in c-sharp
 
 ## Usage
 
-To use, simply run/compile the application and select the option to process. __Not recommended for productional use.__
+To use, simply run/compile the application and select the option to proceed. __Not recommended for productional use.__
 
 Here is the `config.json` you'll need to configure, place it in your crawler's startup directory (it'll be created if not existent anyway).
 
@@ -16,8 +16,6 @@ Here is the `config.json` you'll need to configure, place it in your crawler's s
   "RequestTimeout": 600000,
 }
 ```
-
-I'll somewhat explain what these do...
 
 * `ServersFilename` is the URI pointing to the list of servers you wish to crawl, preferably plain text and split by seperate lines. Note: this can be a local or web file (string)
 * `OutputFilename` is the URI pointing to the output file it'll write the results to, without extension (string)
