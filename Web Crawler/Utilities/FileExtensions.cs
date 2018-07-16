@@ -8,17 +8,17 @@ namespace Web_Crawler.Utilities
     class FileExtensions
     {
         /// <summary>
-        /// Gets total size of ftp file
+        /// Gets total size of FTP file
         /// </summary>
         /// <param name="fileURL">FTP File</param>
         /// <returns></returns>
-        public static long FtpFileSize(string fileURL)
+        public static long FtpFileSize(string fileURL, string fileUsername, string filePassword)
         {
             try
             {
                 var request = (FtpWebRequest)WebRequest.Create(fileURL);
                 request.Timeout = 900000;
-                request.Credentials = new NetworkCredential("anonymous", "password");
+                request.Credentials = new NetworkCredential(fileUsername, filePassword);
                 request.Method = WebRequestMethods.Ftp.GetFileSize;
                 using (WebResponse response = request.GetResponse())
                     return response.ContentLength;
@@ -27,17 +27,17 @@ namespace Web_Crawler.Utilities
         }
 
         /// <summary>
-        /// Gets file DateTimestamp of ftp file
+        /// Gets DateTimestamp of FTP file
         /// </summary>
         /// <param name="fileURL">FTP File</param>
         /// <returns></returns>
-        public static DateTime FtpFileTimestamp(string fileURL)
+        public static DateTime FtpFileTimestamp(string fileURL, string fileUsername, string filePassword)
         {
             try
             {
                 FtpWebRequest request = (FtpWebRequest)WebRequest.Create(fileURL);
                 request.Timeout = 900000;
-                request.Credentials = new NetworkCredential("anonymous", "password");
+                request.Credentials = new NetworkCredential(fileUsername, filePassword);
                 request.Method = WebRequestMethods.Ftp.GetDateTimestamp;
                 FtpWebResponse response = (FtpWebResponse)request.GetResponse();
                 return response.LastModified;
@@ -122,8 +122,8 @@ namespace Web_Crawler.Utilities
         {
             var textItems = new List<string>();
             var webClient = new WebClient();
-            webClient.DownloadFile(fileURL, filePathToDownload + @"\web-servers.txt");
-            textItems.AddRange(File.ReadAllLines(filePathToDownload + @"\web-servers.txt"));
+            webClient.DownloadFile(fileURL, filePathToDownload + @"\ftp-servers.txt");
+            textItems.AddRange(File.ReadAllLines(filePathToDownload + @"\ftp-servers.txt"));
             return textItems;
         }
 

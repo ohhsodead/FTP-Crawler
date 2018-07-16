@@ -61,7 +61,7 @@ namespace Web_Crawler.Utilities
             int line = frame.GetFileLineNumber();
             int col = frame.GetFileColumnNumber();
 
-            Program.LogMessage($"Error : {((Exception)e.ExceptionObject).Message} - [" +
+            Program.LogFtpMessage($"Error : {((Exception)e.ExceptionObject).Message} - [" +
                 "File Name: " + Path.GetFileName(fileName) +
                 "Method Name: " + methodName +
                 "Line: " + line +

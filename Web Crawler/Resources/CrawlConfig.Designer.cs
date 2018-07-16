@@ -65,8 +65,7 @@ namespace Web_Crawler.Resources {
         ///  &quot;ServersFilename&quot;: &quot;C:\ftp-servers.txt&quot;,
         ///  &quot;OutputFilename&quot;: &quot;C:\ftp-file.txt&quot;
         ///  &quot;Overwrite&quot;: &quot;False&quot;,
-        ///  &quot;RequestTimeout&quot;: 900000,
-        ///  &quot;Extensions&quot;: &quot;*&quot;
+        ///  &quot;RequestTimeout&quot;: 900000
         ///}.
         /// </summary>
         internal static string DefaultCrawlConfig {

@@ -6,6 +6,5 @@
         public string OutputFilename { get; set; }
         public bool Overwrite { get; set; }
         public int RequestTimeout { get; set; }
-        public string FileTypes { get; set; }
     }
 }

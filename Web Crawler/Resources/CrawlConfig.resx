@@ -122,8 +122,7 @@
   "ServersFilename": "C:\ftp-servers.txt",
   "OutputFilename": "C:\ftp-file.txt"
   "Overwrite": "False",
-  "RequestTimeout": 900000,
-  "Extensions": "*"
+  "RequestTimeout": 900000
 }</value>
   </data>
 </root>
