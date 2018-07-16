@@ -1,4 +1,4 @@
-﻿using EasyConsole;
+using EasyConsole;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -379,11 +379,12 @@ namespace Web_Crawler
 
         private static void OutputInstructions()
         {
-            Output.WriteLine(ConsoleColor.Cyan, "Notes: " +
-                "\n- Crawler is only a work in progress and there's ongoing active development." +
-                "\n- " +
-                "\n- Not recommended for productional purposes." +
-                "\n- Configuration file (config.json) must be located in your crawler's startup directory before running.");
+            Output.WriteLine(ConsoleColor.Cyan, "Simple FTP File Crawler. Few Notes: " +
+                "\n- This is a work in progress and is only a basic concept. " +
+                "\n- This was created for my personal use, although I made it public for others to experiment with. " +
+                "\n- It's not recommended for productional use." +
+                "\n- Configuration file (config.json) must be located in your crawler's startup directory before running." + 
+                 "\n");
         }
 
         private static void OutputMessage(string message, ConsoleColor color = ConsoleColor.Cyan)
