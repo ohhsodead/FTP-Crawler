@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 
-namespace Web_Crawler.Utilities
+namespace FTP_Crawler.Utilities
 {
     class FileExtensions
     {

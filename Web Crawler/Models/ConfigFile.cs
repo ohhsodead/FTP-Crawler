@@ -1,4 +1,4 @@
-﻿namespace Web_Crawler
+﻿namespace FTP_Crawler
 {
     public partial class ConfigFile
     {

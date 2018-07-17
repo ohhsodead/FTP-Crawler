@@ -6,7 +6,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 
-namespace Web_Crawler.Utilities
+namespace FTP_Crawler.Utilities
 {
     class StringExtensions
     {

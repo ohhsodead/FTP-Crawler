@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 
-namespace Web_Crawler.Utilities
+namespace FTP_Crawler.Utilities
 {
     public static class TextLineRemover
     {

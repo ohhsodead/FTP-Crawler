@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{C8CDDE31-515A-4C5A-9448-BEE9AF798688}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>Web_Crawler</RootNamespace>
-    <AssemblyName>Web Crawler</AssemblyName>
+    <RootNamespace>FTP_Crawler</RootNamespace>
+    <AssemblyName>FTP Crawler</AssemblyName>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
@@ -33,7 +33,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>Web_Crawler.Program</StartupObject>
+    <StartupObject>FTP_Crawler.Program</StartupObject>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationIcon>crawler-icon.ico</ApplicationIcon>
@@ -57,14 +57,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Models\ServerLog.cs" />
+    <Compile Include="Models\ServerHistory.cs" />
     <Compile Include="Utilities\ExceptionEvents.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Resources\CrawlConfig.Designer.cs">
+    <Compile Include="Resources\CrawlerConfig.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
-      <DependentUpon>CrawlConfig.resx</DependentUpon>
+      <DependentUpon>CrawlerConfig.resx</DependentUpon>
     </Compile>
     <Compile Include="Utilities\StringExtensions.cs" />
     <Compile Include="Utilities\TextLineRemover.cs" />
@@ -74,7 +74,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <Resource Include="Resources\CrawlConfig.json">
+    <Resource Include="Resources\CrawlerConfig.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
     <None Include="packages.config" />
@@ -83,9 +83,9 @@
     <Content Include="crawler-icon.ico" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Resources\CrawlConfig.resx">
+    <EmbeddedResource Include="Resources\CrawlerConfig.resx">
       <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>CrawlConfig.Designer.cs</LastGenOutput>
+      <LastGenOutput>CrawlerConfig.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup />

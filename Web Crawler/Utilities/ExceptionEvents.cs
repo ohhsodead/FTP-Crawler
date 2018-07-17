@@ -29,10 +29,9 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
 
-namespace Web_Crawler.Utilities
+namespace FTP_Crawler.Utilities
 {
     public static class ExceptionEvents
     {

@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Web_Crawler.Models
+namespace FTP_Crawler.Models
 {
-    public class ServerLog
+    public class ServerHistory
     {
         public ICollection<Server> Servers { get; set; }
 

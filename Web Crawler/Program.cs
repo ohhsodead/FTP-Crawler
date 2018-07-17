@@ -1,4 +1,4 @@
-using EasyConsole;
+﻿using EasyConsole;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -6,12 +6,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
-using Web_Crawler.Models;
-using Web_Crawler.Utilities;
-using Web_Crawler.Resources;
-using static Web_Crawler.Models.ServerLog;
+using FTP_Crawler.Models;
+using FTP_Crawler.Utilities;
+using FTP_Crawler.Resources;
 
-namespace Web_Crawler
+namespace FTP_Crawler
 {
     class Program
     {
@@ -23,7 +22,7 @@ namespace Web_Crawler
         /// <summary>
         /// Log File Path
         /// </summary>
-        public static string FilenameLog = $@"{FilenameCrawler}\Log.txt";
+        public static string FilenameLog = $@"{FilenameCrawler}\OutputLog.txt";
 
         /// <summary>
         /// Default Configuration File Path
@@ -36,12 +35,12 @@ namespace Web_Crawler
         public static string UrlFileChefSearches = "http://www.filechef.com/searches/index";
 
         /// <summary>
-        /// 
+        /// Stores the server history to this path
         /// </summary>
-        public static string FilenameServerLog = $@"{FilenameCrawler}\ServerLog.json";
+        public static string FilenameServerHistory = $@"{FilenameCrawler}\ServerHistory.json";
 
         /// <summary>
-        /// Sets root menu to display
+        /// Hide/show root menu/options
         /// </summary>
         private static bool RootMenu = true;
 
@@ -50,21 +49,22 @@ namespace Web_Crawler
         /// </summary>
         public static string Header = $@"
                                                                                       
-              __        __   _        ____                    _           
-              \ \      / /__| |__    / ___|_ __ __ ___      _| | ___ _ __      / _ \
-               \ \ /\ / / _ \ '_ \  | |   | '__/ _` \ \ /\ / / |/ _ \ '__|   \_\(_)/_/
-                \ V  V /  __/ |_) | | |___| | | (_| |\ V  V /| |  __/ |       _//o\\_ 
-                 \_/\_/ \___|_.__/   \____|_|  \__,_| \_/\_/ |_|\___|_|        /   \  
+                    ███████╗████████╗██████╗      ██████╗██████╗  █████╗ ██╗    ██╗██╗     ███████╗██████╗ 
+                    ██╔════╝╚══██╔══╝██╔══██╗    ██╔════╝██╔══██╗██╔══██╗██║    ██║██║     ██╔════╝██╔══██╗
+                    █████╗     ██║   ██████╔╝    ██║     ██████╔╝███████║██║ █╗ ██║██║     █████╗  ██████╔╝
+                    ██╔══╝     ██║   ██╔═══╝     ██║     ██╔══██╗██╔══██║██║███╗██║██║     ██╔══╝  ██╔══██╗
+                    ██║        ██║   ██║         ╚██████╗██║  ██║██║  ██║╚███╔███╔╝███████╗███████╗██║  ██║
+                    ╚═╝        ╚═╝   ╚═╝          ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚══╝╚══╝ ╚══════╝╚══════╝╚═╝  ╚═╝
                                                                                       
                                                                                       
-------------------------------------------------------------------------------------------------------
+-----------------------------------------------------------------------------------------------------------------------------
                                                                                       ";
 
         static void Main(string[] args)
         {
             AppDomain.CurrentDomain.UnhandledException += ExceptionEvents.CurrentDomainUnhandledException;
 
-            Console.Title = "Web Crawler";
+            Console.Title = "FTP Crawler";
 
             while (RootMenu)
             {
@@ -72,25 +72,31 @@ namespace Web_Crawler
                 OutputInstructions();
 
                 var menu = new Menu()
-                .Add("Run FTP Crawler \n-  For now, the anonymous login method is used as I need to add support for formatting ftps with their credentials to be parsed.", () => StartFTPCrawler())
-                .Add("Write Top Searches \n-  Simply writes the top searches parsed from FileChef.com pages and writes them to top-searches.txt", () => WriteTopSearches())
-                .Add("Exit", () => Environment.Exit(0));
+                .Add("Run FTP Crawler \nWrites all information about files stored on FTP servers to the specified file path. Setup configuration before running.", () => StartFTPCrawler())
+                .Add(@"Write Searches \nSimply writes the most searches parsed from FileChef.com pages and writes them to '\searches.txt'", () => WriteTopSearches())
+                .Add("Exit \nClose console application.", () => Environment.Exit(0));
                 menu.Display();
             }
         }
 
         /// <summary>
-        /// Gets the users configuration file stored in their crawler's directory path
+        /// Gets (or creates a new) users configuration file stored in crawler's directory path
         /// </summary>
         /// <returns></returns>
         private static ConfigFile UsersConfig()
         {
-
-            if (!File.Exists(FilenameConfig)) // Creates a default config file if it doesn't exist
+            if (!File.Exists(FilenameConfig))
             {
-                OutputMessage($"Configuration file doesn't exist. Go to [{FilenameCrawler}] to configure your crawler.");
-                File.WriteAllText(FilenameConfig, CrawlConfig.DefaultCrawlConfig);
+                OutputMessage($"Configuration file doesn't exist. Locate [{FilenameCrawler}] to configure your crawler options.");
+                File.WriteAllText(FilenameConfig, CrawlerConfig.DefaultCrawlConfig);
                 OutputPause();
+                return null;
+            }
+            else if (File.ReadAllText(FilenameConfig) == CrawlerConfig.DefaultCrawlConfig)
+            {
+                OutputMessage($"You haven't setup your configuration file. Locate [{FilenameCrawler}] to configure your crawler options.");
+                OutputPause();
+                return null;
             }
 
             return JsonConvert.DeserializeObject<ConfigFile>(File.ReadAllText(FilenameConfig).Replace(@"\", "/"));
@@ -99,7 +105,7 @@ namespace Web_Crawler
         /// <summary>
         /// Gets/sets the server log, its main purpose is to not crawl servers within the last week of last time
         /// </summary>
-        private static ServerLog ServerLog { get; set; } = new ServerLog();
+        private static ServerHistory ServerHistory { get; set; } = new ServerHistory();
 
         /// <summary>
         /// Stores the list of broken servers, used to rewrite the server list (add config option)
@@ -107,24 +113,23 @@ namespace Web_Crawler
         private static List<string> BrokenServers { get; set; } = new List<string>();
         
         /// <summary>
-        /// Stores the list of existing file URLs in the server list
+        /// Stores the list of existing file URLs from the last crawl
         /// </summary>
         private static List<string> ExistingFileURLs { get; set; } = new List<string>();
-
-        /// <summary>
-        /// Measures the elapsed time the crawler took
-        /// </summary>
-
+        
         /// <summary>
         /// Write files from FTP servers
         /// </summary>
         public static void StartFTPCrawler()
         {
             RootMenu = false;
-            OutputTitle();            
-            var usersConfig = UsersConfig();
-            var timeCrawler = new Stopwatch();
-            var ftpServers = new List<string>();
+            OutputTitle();
+
+            ConfigFile usersConfig;
+            if (UsersConfig() == null) { RootMenu = true; return; } else usersConfig = UsersConfig();
+
+            var timeCrawler = new Stopwatch(); // Measure elapsed time for the crawler
+            var ftpServers = new List<string>(); // Store list of servers we're going to crawl
 
             // Loads the list of ftp servers from either a local file or web file
             OutputMessage($"Reading servers from [{usersConfig.ServersFilename}]...");
@@ -143,7 +148,7 @@ namespace Web_Crawler
                 return;
             }
 
-            OutputMessage($"Servers loaded successfully.", ConsoleColor.Green);
+            OutputMessage($"Servers loaded.", ConsoleColor.Magenta);
 
             var outputFileName = $@"{usersConfig.OutputFilename}.json".Replace("/", @"\"); // Directory to output results lists to (If we're writing to one file)
 
@@ -157,7 +162,7 @@ namespace Web_Crawler
             }
             else
             {
-                OutputMessage($"Getting existing files...", ConsoleColor.Green);
+                OutputMessage($"Getting existing files...", ConsoleColor.Magenta);
 
                 if (!File.Exists(outputFileName))
                     File.WriteAllText(outputFileName, "");
@@ -180,23 +185,19 @@ namespace Web_Crawler
 
             timeCrawler.Start(); // Start the timer 
 
-            // Reads servers log contents and sets to ServerLog
-            if (File.Exists(FilenameServerLog))
+            // Reads servers log contents and sets to current ServerLog
+            if (File.Exists(FilenameServerHistory))
             {
-                using (FileStream fs = File.Open(FilenameServerLog, FileMode.Open))
+                using (FileStream fs = File.Open(FilenameServerHistory, FileMode.Open))
                 using (BufferedStream bs = new BufferedStream(fs))
                 using (StreamReader sr = new StreamReader(bs))
                 {
                     try
                     {
-                        ServerLog = JsonConvert.DeserializeObject<ServerLog>(sr.ReadToEnd());
+                        ServerHistory = JsonConvert.DeserializeObject<ServerHistory>(sr.ReadToEnd());
                     }
                     catch { }
                 }
-            }
-            else
-            {
-                File.WriteAllText(FilenameServerLog, ""); // Creates a blank server log file to output log to
             }
 
             // Loops FTP servers while crawling files and writing them to file(s)
@@ -204,25 +205,27 @@ namespace Web_Crawler
             {
                 try
                 {
+                    var uriServer = new Uri(ftpServer);
+
                     string serverHost;
                     int serverPort;
                     string serverUsername;
                     string serverPassword;
 
                     // Attempts to get host, port, username and password from ftp server url - username:password@host:port / username:password host:port
-                    string serverUserInfo = new Uri(ftpServer).UserInfo;
+                    string serverUserInfo = uriServer.UserInfo;
                     serverUsername = serverUserInfo.Split(':')[0];
                     serverPassword = serverUserInfo.Split(':')[1];
 
-                    serverHost = new Uri(ftpServer).Host;
-                    serverPort = new Uri(ftpServer).Port;
+                    serverHost = uriServer.Host;
+                    serverPort = uriServer.Port;
 
                     OutputTitle();
                     OutputMessage("Crawling " + ftpServer);
 
-                    if ((GetServerLog(serverHost).LastCrawled - DateTime.Now).TotalDays > 7) // If server was last crawled more than a week ago, scan again...
+                    if ((GetServerLog(serverHost).LastCrawled - DateTime.Now).TotalDays > 7) // Only crawl server if it was last crawled over a week ago
                     {
-                        WriteFTPFiles($"ftp://{serverHost}:{serverPort}/", serverUsername, serverPassword, usersConfig, outputFileName);
+                        WriteFTPFiles($"ftp://{serverHost}:{serverPort}/", serverUsername, serverPassword, outputFileName, usersConfig.RequestTimeout);
                         UpdateServerLogDate(serverHost, DateTime.Now);
                     }
                 }
@@ -233,7 +236,7 @@ namespace Web_Crawler
 
             // Rewrites server list but without broken servers (servers that weren't crawled)
             File.Delete(usersConfig.ServersFilename);
-            using (StreamWriter sw = File.AppendText(usersConfig.ServersFilename))
+            using (var sw = File.AppendText(usersConfig.ServersFilename))
                 foreach (var ftpServer in ftpServers)
                     if (!BrokenServers.Contains(ftpServer))
                         sw.WriteLine(ftpServer);
@@ -247,35 +250,34 @@ namespace Web_Crawler
             RootMenu = true;
         }
 
-        public static void WriteFTPFiles(string serverAddress, string serverUsername, string serverPassword, ConfigFile usersConfig, string outputFileName)
+        public static void WriteFTPFiles(string serverAddress, string serverUsername, string serverPassword, string outputFileName, int requestTimeout)
         {
             try
             {
-                FtpWebRequest request = (FtpWebRequest)WebRequest.Create(serverAddress);
-                request.Timeout = usersConfig.RequestTimeout;
+                var request = (FtpWebRequest)WebRequest.Create(serverAddress);
+                request.Timeout = requestTimeout;
                 request.Method = WebRequestMethods.Ftp.ListDirectory;
                 request.Credentials = new NetworkCredential(serverUsername, serverPassword);
 
-                using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
-                using (Stream responseStream = response.GetResponseStream())
-                using (StreamReader reader = new StreamReader(responseStream))
+                using (var response = (FtpWebResponse)request.GetResponse())
+                using (var responseStream = response.GetResponseStream())
+                using (var reader = new StreamReader(responseStream))
                 {
-                    var directoryListing = reader.ReadToEnd().Split("\r\n".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
-
-                    foreach (var item in directoryListing)
+                    foreach (var item in reader.ReadToEnd().Split("\r\n".ToCharArray(), StringSplitOptions.RemoveEmptyEntries))
                     {
-                        string itemURL = $"{serverAddress}{item}";
-                        Uri itemUri = new Uri(itemURL);
+                        var itemUrl = $"{serverAddress}{item}";
+                        var itemUri = new Uri(itemUrl);
 
                         if (!ExistingFileURLs.Contains(itemUri.AbsoluteUri.Replace("#", "%23"))) // Checks if this file isn't a duplicate
                         {
-                            if (IsFile(itemURL)) // Checks if this is file by requesting file size and returning false if an error occurs
+                            if (IsFile(itemUrl)) // Check if item is file by requesting file size, otherwise returning false if an error occurs
                             {
-                                FtpFile newFile = new FtpFile
+                                // Create a new FTP File object to write to output
+                                var newFile = new FtpFile
                                 {
-                                    Name = Path.GetFileName(new Uri(itemURL).LocalPath),
-                                    Size = FileExtensions.FtpFileSize(itemURL, serverUsername, serverPassword),
-                                    Modified = FileExtensions.FtpFileTimestamp(itemURL, serverUsername, serverPassword),
+                                    Name = Path.GetFileName(new Uri(itemUrl).LocalPath),
+                                    Size = FileExtensions.FtpFileSize(itemUrl, serverUsername, serverPassword),
+                                    Modified = FileExtensions.FtpFileTimestamp(itemUrl, serverUsername, serverPassword),
                                     URL = itemUri.AbsoluteUri.Replace("#", "%23")
                                 };
 
@@ -290,9 +292,8 @@ namespace Web_Crawler
                             }
                             else
                             {
-                                if (!item.StartsWith("#"))
-                                    if (!item.EndsWith("#"))
-                                        WriteFTPFiles($"{itemURL}/", serverUsername, serverPassword, usersConfig, outputFileName);
+                                if (!item.StartsWith("#") || !item.EndsWith("#"))
+                                    WriteFTPFiles($"{itemUrl}/", serverUsername, serverPassword, outputFileName, requestTimeout);
                             }
                         }
                     }
@@ -331,8 +332,8 @@ namespace Web_Crawler
         private static void WriteTopSearches()
         {
             var items = new List<string>();
-            items.AddRange(GetTopSearches(200));
-            items.AddRange(GetTopSearches(300));
+            items.AddRange(GetSearches(200));
+            items.AddRange(GetSearches(300));
 
             // Load users configuration json file
             var usersConfig = UsersConfig();
@@ -343,13 +344,13 @@ namespace Web_Crawler
                 foreach (var item in items)
                     sw.WriteLine(item);
 
-            OutputMessage("Top Searches Completed: Results (" + items.Count() + ")");
+            OutputMessage("Searches Completed: Results (" + items.Count() + ")");
             RootMenu = true;
         }
 
-        private static List<string> GetTopSearches(int number = 100) // page 1 is a different url, but others work - 200 = Page 2, 300 = Page 3
+        private static List<string> GetSearches(int number = 100) // page 1 is a different url, but others work - 200 = Page 2, 300 = Page 3
         {
-            List<string> listTopSearches = new List<string>();
+            List<string> listSearches = new List<string>();
             using (var client = new WebClient())
             using (var stream = client.OpenRead("https://api.hackertarget.com/pagelinks/?q=" + UrlFileChefSearches + "/" + number))
             using (var reader = new StreamReader(stream))
@@ -364,27 +365,27 @@ namespace Web_Crawler
                     formattedItem = formattedItem.Substring(0, formattedItem.LastIndexOf('/')).Replace("-", " ");
 
                     if (formattedItem != "" && formattedItem != UrlFileChefSearches)
-                        listTopSearches.Add(formattedItem);
+                        listSearches.Add(formattedItem);
                 }
             }
-            listTopSearches.Reverse();
-            return listTopSearches;
+            listSearches.Reverse();
+            return listSearches;
         }
 
         private static void OutputTitle()
         {
             Console.Clear();
-            Output.WriteLine(ConsoleColor.Blue, Header);
+            Output.WriteLine(ConsoleColor.Green, Header);
         }
 
         private static void OutputInstructions()
         {
-            Output.WriteLine(ConsoleColor.Cyan, "Simple FTP File Crawler. Few Notes: " +
-                "\n- This is a work in progress and is only a basic concept. " +
-                "\n- This was created for my personal use, although I made it public for others to experiment with. " +
-                "\n- It's not recommended for productional use." +
-                "\n- Configuration file (config.json) must be located in your crawler's startup directory before running." + 
-                 "\n");
+            Output.WriteLine(ConsoleColor.Gray, "Simple FTP File Crawler. Notes:" +
+                "\n- This is a work in progress and is only a basic concept." +
+                "\n- This was created for my personal use, although it's made public for others to try out." +
+                "\n- It's not recommended for productional use as there's still a lot of improvements to be made." +
+                "\n- Your configuration file (CrawlerConfig.json) must be located in this application's directory before running." + 
+                "\n");
         }
 
         private static void OutputMessage(string message, ConsoleColor color = ConsoleColor.Cyan)
@@ -396,7 +397,7 @@ namespace Web_Crawler
         private static int ResultsFilesAdded { get; set; } = 0;
         private static long ResultsTotalSize { get; set; } = 0;
 
-        private static void OutputResults(int webServersCrawled, TimeSpan timeTaken)
+        private static void OutputResults(int ftpServersCrawled, TimeSpan timeTaken)
         {
             OutputTitle();
             Output.WriteLine(ConsoleColor.Red, string.Format(@"------------- Results --------------
@@ -409,14 +410,14 @@ Time Taken (mins): {4}
 --------------------
 Total Files Found: {5}
 
----------------------------------------", webServersCrawled, BrokenServers.Count, ResultsFilesAdded, Utilities.StringExtensions.BytesToPrefix(ResultsTotalSize), timeTaken.TotalMinutes, ResultsFilesFound));
+---------------------------------------", ftpServersCrawled, BrokenServers.Count, ResultsFilesAdded, Utilities.StringExtensions.BytesToPrefix(ResultsTotalSize), timeTaken.TotalMinutes, ResultsFilesFound));
 
             OutputPause();
         }
 
         private static void OutputPause()
         {
-            Output.WriteLine(ConsoleColor.Green, "Press any key to continue . . . ");
+            Output.WriteLine(ConsoleColor.Yellow, "Press any key to continue . . . ");
             Console.ReadKey(true);
         }
 
@@ -431,32 +432,32 @@ Total Files Found: {5}
         }
 
         /// <summary>
-        /// Gets the log content for a server
+        /// Gets the server log content for the specified server
         /// </summary>
-        /// <param name="server"></param>
-        /// <returns></returns>
-        private static Server GetServerLog(string server)
+        /// <param name="server">Server object by name to return</param>
+        /// <returns>Server Log</returns>
+        private static ServerHistory.Server GetServerLog(string server)
         {
-            // Tries to find the server in the current log and returns the matching server name
-            foreach (var log in ServerLog.Servers)
+            // Tries to find the server in the current log and returns the matching server object
+            foreach (var log in ServerHistory.Servers)
                 if (log.Name == server)
                     return log;
 
             // Creates a new server log, adds it to the list of current servers log and then returns it
-            var newServerLog = new Server() { Name = server, LastCrawled = DateTime.Now };
-            ServerLog.Servers.Add(newServerLog); return newServerLog;
+            var newServerLog = new ServerHistory.Server() { Name = server, LastCrawled = DateTime.Now };
+            ServerHistory.Servers.Add(newServerLog); return newServerLog;
         }
 
         /// <summary>
         /// Sets the log date of a server to the specified time
         /// </summary>
-        /// <param name="server"></param>
-        /// <param name="time"></param>
+        /// <param name="server">Server object by name to update server date</param>
+        /// <param name="time">Date to replace the date to</param>
         private static void UpdateServerLogDate(string server, DateTime time)
         {
-            foreach (var log in ServerLog.Servers)
+            foreach (var log in ServerHistory.Servers)
                 if (log.Name == server)
-                    log.LastCrawled = time;
+                    log.LastCrawled = time; return;
         }
 
         /// <summary>
@@ -464,7 +465,7 @@ Total Files Found: {5}
         /// </summary>
         private static void UpdateServerLogFile()
         {
-            File.WriteAllText(FilenameServerLog, JsonConvert.SerializeObject(ServerLog));
+            File.WriteAllText(FilenameServerHistory, JsonConvert.SerializeObject(ServerHistory));
         }
     }
 }

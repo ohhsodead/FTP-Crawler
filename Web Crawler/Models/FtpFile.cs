@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Web_Crawler.Models
+namespace FTP_Crawler.Models
 {
     public partial class FtpFile
     {
