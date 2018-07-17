@@ -1,43 +1,44 @@
-﻿using EasyConsole;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
+﻿using System;
 using System.Net;
-using FTP_Crawler.Models;
+using System.Linq;
+using System.IO;
+using System.Diagnostics;
+using System.Collections.Generic;
+using Newtonsoft.Json;
 using FTP_Crawler.Utilities;
 using FTP_Crawler.Resources;
+using FTP_Crawler.Models;
+using EasyConsole;
 
 namespace FTP_Crawler
 {
     class Program
     {
         /// <summary>
-        /// This applications path
+        /// Current applications path
         /// </summary>
         public static string FilenameCrawler = Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory);
 
         /// <summary>
-        /// Log File Path
+        /// Default Configuration File Path
+        /// </summary>
+        public static string FilenameConfig = $@"{FilenameCrawler}\Config.json";
+
+        /// <summary>
+        /// Writes and stores the server crawl history to this path
+        /// </summary>
+        public static string FilenameHistory = $@"{FilenameCrawler}\History.json";
+        
+        /// <summary>
+        /// Writes all log messages to this file path
         /// </summary>
         public static string FilenameLog = $@"{FilenameCrawler}\OutputLog.txt";
 
-        /// <summary>
-        /// Default Configuration File Path
-        /// </summary>
-        public static string FilenameConfig = $@"{FilenameCrawler}\config.json";
 
         /// <summary>
         /// URL to get top searches from
         /// </summary>
         public static string UrlFileChefSearches = "http://www.filechef.com/searches/index";
-
-        /// <summary>
-        /// Stores the server history to this path
-        /// </summary>
-        public static string FilenameServerHistory = $@"{FilenameCrawler}\ServerHistory.json";
 
         /// <summary>
         /// Hide/show root menu/options
@@ -186,9 +187,9 @@ namespace FTP_Crawler
             timeCrawler.Start(); // Start the timer 
 
             // Reads servers log contents and sets to current ServerLog
-            if (File.Exists(FilenameServerHistory))
+            if (File.Exists(FilenameHistory))
             {
-                using (FileStream fs = File.Open(FilenameServerHistory, FileMode.Open))
+                using (FileStream fs = File.Open(FilenameHistory, FileMode.Open))
                 using (BufferedStream bs = new BufferedStream(fs))
                 using (StreamReader sr = new StreamReader(bs))
                 {
@@ -461,11 +462,11 @@ Total Files Found: {5}
         }
 
         /// <summary>
-        /// Updates the server log file with the latest crawler results
+        /// Updates the server log file with the latest crawl results
         /// </summary>
         private static void UpdateServerLogFile()
         {
-            File.WriteAllText(FilenameServerHistory, JsonConvert.SerializeObject(ServerHistory));
+            File.WriteAllText(FilenameHistory, JsonConvert.SerializeObject(ServerHistory));
         }
     }
 }
